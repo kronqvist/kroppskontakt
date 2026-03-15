@@ -1,6 +1,6 @@
 Kroppskontakt is a single-page daily habit checklist served as a static PWA via GitHub Pages. Six fixed items (eating, movement, meditation) are checked off each day; per-item heatmap graphs show 30-day history. All state lives in localStorage. Zero dependencies — one HTML file, one manifest, one SVG icon.
 
-Version format: `YYYY-MM-DD-<index>`. Bump the index for same-day releases, the date otherwise. The version lives in `manifest.json`.
+Version format: `YYYY-MM-DD-<index>`. Bump the index for same-day releases, the date otherwise. The version lives in `manifest.json`. **Every change that touches the app must bump the version** — never skip this, even for single-line edits.
 
 After completing a change, end your response with a commit message ready to copy — a short imperative-mood title line, a blank line, then a body describing what changed and why.
 
