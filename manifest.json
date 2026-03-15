@@ -1,0 +1,17 @@
+{
+  "name": "Kroppskontakt",
+  "short_name": "Kroppskontakt",
+  "version": "2026-03-15-1",
+  "description": "Daglig checklista för kropp och vanor",
+  "start_url": "/kroppskontakt/",
+  "display": "standalone",
+  "background_color": "#1a1a1e",
+  "theme_color": "#1a1a1e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

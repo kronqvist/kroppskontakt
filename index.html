@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kroppskontakt</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -181,59 +183,61 @@
     margin-bottom: 1rem;
   }
 
-  .graph {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 7rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .bar-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    justify-content: flex-end;
-    position: relative;
-  }
-
-  .bar {
-    width: 100%;
-    border-radius: 2px 2px 0 0;
-    min-height: 2px;
-    transition: height 0.3s;
-  }
-
-  .bar.empty { background: var(--surface); min-height: 0; height: 0 !important; }
-  .bar.low { background: var(--accent-mid); }
-  .bar.mid { background: var(--accent); opacity: 0.7; }
-  .bar.high { background: var(--accent); }
-  .bar.full { background: var(--check-green); }
-  .bar.today-bar { box-shadow: 0 0 0 1px var(--accent); }
-
   .graph-labels {
     display: flex;
     justify-content: space-between;
-    margin-top: 0.4rem;
+    margin-bottom: 0.75rem;
     font-size: 0.65rem;
     color: var(--text-muted);
   }
 
-  .streak-row {
+  .item-graph {
+    margin-bottom: 0.6rem;
+  }
+
+  .item-graph-header {
     display: flex;
     justify-content: space-between;
-    margin-top: 1rem;
-    font-size: 0.8rem;
+    align-items: baseline;
+    margin-bottom: 0.3rem;
+  }
+
+  .item-graph-label {
+    font-size: 0.78rem;
     color: var(--text-muted);
   }
 
-  .streak-row .val {
+  .item-graph-streak {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  .item-graph-streak .val {
     color: var(--accent);
     font-family: var(--serif);
-    font-size: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .heatmap-row {
+    display: flex;
+    gap: 2px;
+  }
+
+  .heatmap-cell {
+    flex: 1;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--surface);
+    transition: background 0.2s;
+  }
+
+  .heatmap-cell.filled {
+    background: var(--accent);
+  }
+
+  .heatmap-cell.today-cell {
+    outline: 1.5px solid var(--text-muted);
+    outline-offset: -1px;
   }
 
   @media (max-width: 400px) {
@@ -266,15 +270,11 @@
 
 <div class="graph-section">
   <div class="graph-title">Senaste 30 dagarna</div>
-  <div class="graph" id="graph"></div>
   <div class="graph-labels">
     <span id="graphStart"></span>
     <span id="graphEnd"></span>
   </div>
-  <div class="streak-row">
-    <div>Nuvarande svit: <span class="val" id="streak">0</span></div>
-    <div>Snitt: <span class="val" id="avg">0%</span></div>
-  </div>
+  <div id="graphs"></div>
 </div>
 
 <script>
@@ -330,13 +330,6 @@ function saveDay(key, checks) {
   saveAll(all);
 }
 
-function dayScore(key) {
-  const checks = loadAll()[key] || {};
-  let n = 0;
-  for (const item of ITEMS) if (checks[item.id]) n++;
-  return n;
-}
-
 let currentDate = today();
 
 function render() {
@@ -381,55 +374,50 @@ function render() {
 }
 
 function renderGraph() {
-  const g = document.getElementById('graph');
-  g.innerHTML = '';
+  const container = document.getElementById('graphs');
+  container.innerHTML = '';
   const t = today();
   const todayKey = dateKey(t);
-  const scores = [];
+  const allData = loadAll();
 
-  for (let i = 29; i >= 0; i--) {
-    const d = addDays(t, -i);
-    const key = dateKey(d);
-    const score = dayScore(key);
-    scores.push({ key, score, date: d });
-  }
+  const days = [];
+  for (let i = 29; i >= 0; i--) days.push(addDays(t, -i));
 
-  const max = ITEMS.length;
-  for (const s of scores) {
-    const pct = s.score / max;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'bar-wrapper';
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    if (s.score === 0) bar.classList.add('empty');
-    else if (pct <= 0.33) bar.classList.add('low');
-    else if (pct <= 0.66) bar.classList.add('mid');
-    else if (pct < 1) bar.classList.add('high');
-    else bar.classList.add('full');
-    if (s.key === todayKey) bar.classList.add('today-bar');
-    bar.style.height = s.score === 0 ? '0' : `${Math.max(pct * 100, 8)}%`;
-    wrapper.appendChild(bar);
-    g.appendChild(wrapper);
-  }
-
-  document.getElementById('graphStart').textContent = formatDate(addDays(t, -29));
+  document.getElementById('graphStart').textContent = formatDate(days[0]);
   document.getElementById('graphEnd').textContent = formatDate(t);
 
-  // Streak: consecutive days (before today) with at least 1 check
-  let streak = 0;
-  for (let i = 0; i <= 29; i++) {
-    const key = dateKey(addDays(t, -i));
-    if (dayScore(key) > 0) streak++;
-    else break;
-  }
-  document.getElementById('streak').textContent = streak;
+  for (const item of ITEMS) {
+    const section = document.createElement('div');
+    section.className = 'item-graph';
 
-  // Average completion over days that have any data
-  const withData = scores.filter(s => s.score > 0);
-  const avg = withData.length > 0
-    ? Math.round(withData.reduce((a, s) => a + s.score / max, 0) / withData.length * 100)
-    : 0;
-  document.getElementById('avg').textContent = `${avg}%`;
+    let streak = 0;
+    for (let i = 0; i <= 29; i++) {
+      const key = dateKey(addDays(t, -i));
+      if (allData[key] && allData[key][item.id]) streak++;
+      else break;
+    }
+
+    const header = document.createElement('div');
+    header.className = 'item-graph-header';
+    header.innerHTML = `
+      <span class="item-graph-label">${item.label}</span>
+      <span class="item-graph-streak"><span class="val">${streak}</span> dagar</span>
+    `;
+    section.appendChild(header);
+
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    for (const d of days) {
+      const key = dateKey(d);
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      if (allData[key] && allData[key][item.id]) cell.classList.add('filled');
+      if (key === todayKey) cell.classList.add('today-cell');
+      row.appendChild(cell);
+    }
+    section.appendChild(row);
+    container.appendChild(section);
+  }
 }
 
 document.getElementById('prev').addEventListener('click', () => {
