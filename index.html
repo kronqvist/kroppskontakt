@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kroppskontakt</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1a1a1e;
+    --surface: #252528;
+    --surface-hover: #2e2e32;
+    --border: #3a3a3e;
+    --text: #e8e4df;
+    --text-muted: #9a968f;
+    --accent: #d4a44b;
+    --accent-dim: rgba(212, 164, 75, 0.15);
+    --accent-mid: rgba(212, 164, 75, 0.4);
+    --check-green: #6ec77a;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.8rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.02em;
+  }
+
+  .subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .date-nav button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .date-nav button:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .date-nav .date-label {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    min-width: 10rem;
+    text-align: center;
+  }
+
+  .date-nav .today-marker {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .checklist {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .check-item:hover { background: var(--surface-hover); }
+
+  .check-item.checked {
+    border-color: rgba(110, 199, 122, 0.3);
+    background: rgba(110, 199, 122, 0.06);
+  }
+
+  .checkbox {
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 2px solid var(--border);
+    border-radius: 0.3rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .check-item.checked .checkbox {
+    border-color: var(--check-green);
+    background: var(--check-green);
+  }
+
+  .checkbox svg {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s;
+  }
+
+  .check-item.checked .checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .check-label { font-size: 0.95rem; }
+
+  .progress-ring {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .progress-ring .count {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--text);
+  }
+
+  .graph-section {
+    width: 100%;
+    max-width: 28rem;
+  }
+
+  .graph-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .graph {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 7rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+  }
+
+  .bar {
+    width: 100%;
+    border-radius: 2px 2px 0 0;
+    min-height: 2px;
+    transition: height 0.3s;
+  }
+
+  .bar.empty { background: var(--surface); min-height: 0; height: 0 !important; }
+  .bar.low { background: var(--accent-mid); }
+  .bar.mid { background: var(--accent); opacity: 0.7; }
+  .bar.high { background: var(--accent); }
+  .bar.full { background: var(--check-green); }
+  .bar.today-bar { box-shadow: 0 0 0 1px var(--accent); }
+
+  .graph-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
+  .streak-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .streak-row .val {
+    color: var(--accent);
+    font-family: var(--serif);
+    font-size: 1rem;
+  }
+
+  @media (max-width: 400px) {
+    body { padding: 1.5rem 0.75rem 3rem; }
+    h1 { font-size: 1.5rem; }
+    .check-item { padding: 0.75rem 0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Kroppskontakt</h1>
+<p class="subtitle">Daglig checklista</p>
+
+<div class="date-nav">
+  <button id="prev" aria-label="Föregående dag">&#8249;</button>
+  <div style="text-align:center">
+    <div class="date-label" id="dateLabel"></div>
+    <div class="today-marker" id="todayMarker"></div>
+  </div>
+  <button id="next" aria-label="Nästa dag">&#8250;</button>
+</div>
+
+<div class="progress-ring">
+  <span class="count" id="progressCount">0/6</span>
+  <span>avklarade</span>
+</div>
+
+<div class="checklist" id="checklist"></div>
+
+<div class="graph-section">
+  <div class="graph-title">Senaste 30 dagarna</div>
+  <div class="graph" id="graph"></div>
+  <div class="graph-labels">
+    <span id="graphStart"></span>
+    <span id="graphEnd"></span>
+  </div>
+  <div class="streak-row">
+    <div>Nuvarande svit: <span class="val" id="streak">0</span></div>
+    <div>Snitt: <span class="val" id="avg">0%</span></div>
+  </div>
+</div>
+
+<script>
+const ITEMS = [
+  { id: 'portion',    label: 'En portion' },
+  { id: 'veg-lunch',  label: 'Grönsaker till lunch' },
+  { id: 'veg-dinner', label: 'Grönsaker till middag' },
+  { id: 'snack',      label: 'Mellanmål' },
+  { id: 'workout',    label: 'Träning' },
+  { id: 'meditation', label: 'Meditation' },
+];
+
+const STORAGE_KEY = 'kroppskontakt';
+const DAY_NAMES = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function dateKey(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function today() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function formatDate(d) {
+  return `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+}
+
+function loadAll() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveAll(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadDay(key) {
+  return loadAll()[key] || {};
+}
+
+function saveDay(key, checks) {
+  const all = loadAll();
+  all[key] = checks;
+  saveAll(all);
+}
+
+function dayScore(key) {
+  const checks = loadAll()[key] || {};
+  let n = 0;
+  for (const item of ITEMS) if (checks[item.id]) n++;
+  return n;
+}
+
+let currentDate = today();
+
+function render() {
+  const key = dateKey(currentDate);
+  const checks = loadDay(key);
+  const isToday = dateKey(currentDate) === dateKey(today());
+
+  document.getElementById('dateLabel').textContent = formatDate(currentDate);
+  document.getElementById('todayMarker').textContent = isToday ? 'idag' : '';
+  document.getElementById('next').disabled = isToday;
+  document.getElementById('next').style.opacity = isToday ? '0.3' : '1';
+
+  const list = document.getElementById('checklist');
+  list.innerHTML = '';
+  let done = 0;
+
+  for (const item of ITEMS) {
+    const checked = !!checks[item.id];
+    if (checked) done++;
+
+    const el = document.createElement('div');
+    el.className = 'check-item' + (checked ? ' checked' : '');
+    el.innerHTML = `
+      <div class="checkbox">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="#1a1a1e" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="check-label">${item.label}</span>
+    `;
+    el.addEventListener('click', () => {
+      checks[item.id] = !checks[item.id];
+      saveDay(key, checks);
+      render();
+    });
+    list.appendChild(el);
+  }
+
+  document.getElementById('progressCount').textContent = `${done}/${ITEMS.length}`;
+  renderGraph();
+}
+
+function renderGraph() {
+  const g = document.getElementById('graph');
+  g.innerHTML = '';
+  const t = today();
+  const todayKey = dateKey(t);
+  const scores = [];
+
+  for (let i = 29; i >= 0; i--) {
+    const d = addDays(t, -i);
+    const key = dateKey(d);
+    const score = dayScore(key);
+    scores.push({ key, score, date: d });
+  }
+
+  const max = ITEMS.length;
+  for (const s of scores) {
+    const pct = s.score / max;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bar-wrapper';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    if (s.score === 0) bar.classList.add('empty');
+    else if (pct <= 0.33) bar.classList.add('low');
+    else if (pct <= 0.66) bar.classList.add('mid');
+    else if (pct < 1) bar.classList.add('high');
+    else bar.classList.add('full');
+    if (s.key === todayKey) bar.classList.add('today-bar');
+    bar.style.height = s.score === 0 ? '0' : `${Math.max(pct * 100, 8)}%`;
+    wrapper.appendChild(bar);
+    g.appendChild(wrapper);
+  }
+
+  document.getElementById('graphStart').textContent = formatDate(addDays(t, -29));
+  document.getElementById('graphEnd').textContent = formatDate(t);
+
+  // Streak: consecutive days (before today) with at least 1 check
+  let streak = 0;
+  for (let i = 0; i <= 29; i++) {
+    const key = dateKey(addDays(t, -i));
+    if (dayScore(key) > 0) streak++;
+    else break;
+  }
+  document.getElementById('streak').textContent = streak;
+
+  // Average completion over days that have any data
+  const withData = scores.filter(s => s.score > 0);
+  const avg = withData.length > 0
+    ? Math.round(withData.reduce((a, s) => a + s.score / max, 0) / withData.length * 100)
+    : 0;
+  document.getElementById('avg').textContent = `${avg}%`;
+}
+
+document.getElementById('prev').addEventListener('click', () => {
+  currentDate = addDays(currentDate, -1);
+  render();
+});
+
+document.getElementById('next').addEventListener('click', () => {
+  if (dateKey(currentDate) < dateKey(today())) {
+    currentDate = addDays(currentDate, 1);
+    render();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') { currentDate = addDays(currentDate, -1); render(); }
+  if (e.key === 'ArrowRight' && dateKey(currentDate) < dateKey(today())) {
+    currentDate = addDays(currentDate, 1); render();
+  }
+});
+
+render();
+</script>
+
+</body>
+</html>
