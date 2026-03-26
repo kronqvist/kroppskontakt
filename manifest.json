@@ -1,7 +1,7 @@
 {
   "name": "Kroppskontakt",
   "short_name": "Kroppskontakt",
-  "version": "2026-03-15-2",
+  "version": "2026-03-26-1",
   "description": "Daglig checklista för kropp och vanor",
   "start_url": "/kroppskontakt/",
   "display": "standalone",

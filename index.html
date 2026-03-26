@@ -223,6 +223,13 @@
     gap: 2px;
   }
 
+  .heatmap-week-divider {
+    width: 5px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border);
+    margin: 0 1px;
+  }
+
   .heatmap-cell {
     flex: 1;
     aspect-ratio: 1;
@@ -391,30 +398,37 @@ function renderGraph() {
     const section = document.createElement('div');
     section.className = 'item-graph';
 
-    let streak = 0;
-    for (let i = 0; i <= 29; i++) {
+    let count7 = 0;
+    for (let i = 0; i < 7; i++) {
       const key = dateKey(addDays(t, -i));
-      if (allData[key] && allData[key][item.id]) streak++;
-      else break;
+      if (allData[key] && allData[key][item.id]) count7++;
     }
 
     const header = document.createElement('div');
     header.className = 'item-graph-header';
     header.innerHTML = `
       <span class="item-graph-label">${item.label}</span>
-      <span class="item-graph-streak"><span class="val">${streak}</span> dagar</span>
+      <span class="item-graph-streak"><span class="val">${count7}</span>/7 dagar</span>
     `;
     section.appendChild(header);
 
     const row = document.createElement('div');
     row.className = 'heatmap-row';
-    for (const d of days) {
+    for (let i = 0; i < days.length; i++) {
+      const d = days[i];
       const key = dateKey(d);
       const cell = document.createElement('div');
       cell.className = 'heatmap-cell';
       if (allData[key] && allData[key][item.id]) cell.classList.add('filled');
       if (key === todayKey) cell.classList.add('today-cell');
       row.appendChild(cell);
+      // insert divider after every 7th cell from the right (before index 2, 9, 16, 23 from left)
+      const fromRight = days.length - 1 - i;
+      if (fromRight > 0 && fromRight % 7 === 0) {
+        const sep = document.createElement('div');
+        sep.className = 'heatmap-week-divider';
+        row.appendChild(sep);
+      }
     }
     section.appendChild(row);
     container.appendChild(section);
